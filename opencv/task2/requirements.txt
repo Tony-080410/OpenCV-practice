@@ -1,0 +1,7 @@
+opencv-python>=4.8,<6.0
+numpy>=1.24
+
+pupil-apriltags>=1.0.4
+
+# 生成打印素材（tools/make_patterns.py）用，仅此一处需要
+pillow>=10

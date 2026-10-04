@@ -1,0 +1,7 @@
+# 任务一（装甲板灯条识别）依赖
+# 安装：python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+#
+# 考核手册规定使用 OpenCV 4.x，故设上限，避免误装 5.x 后接口行为变化
+opencv-python>=4.8,<5.0
+numpy>=1.24
+
