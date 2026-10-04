@@ -9,12 +9,12 @@
 
 | 项目 | 版本 / 说明 |
 | --- | --- |
-| 操作系统 | Ubuntu 24.04 LTS（WSL2，宿主机 Windows 11） |
+| 操作系统 | Ubuntu 26.04 LTS |
 | 语言 | Python 3.12 |
-| OpenCV | opencv-python 4.x　【请填实际版本，见第 14 节】 |
-| 数值库 | numpy【请填实际版本】 |
-| 开发工具 | VS Code + Remote-WSL（Python、Pylance、Python Debugger 扩展） |
-| 虚拟环境 | `~/OpenCV_python/.venv`（项目上一层的 `.venv`，已在 VS Code 中选为解释器） |
+| OpenCV | opencv-python 5.x |
+| 数值库 | numpy |
+| 开发工具 | VS Code （+Python、Pylance、Python Debugger 扩展） |
+| 虚拟环境 | `~/opencv/.venv` |
 
 安装与自检：
 
@@ -77,7 +77,7 @@ python main.py | tee outputs/log_task1.txt      # 同时把逐帧日志存成文
 | `--max-frames` | `0` | 只处理前 N 帧，`0` 表示完整视频 |
 | `--show` | 关闭 | 逐帧实时预览窗口 |
 
-### 3.2 生成中间结果（考核要求的三项证据）
+### 3.2 生成中间结果
 
 ```bash
 python tools/dump_channels.py --index 120       # 证据 1：通道与颜色分割
@@ -194,7 +194,7 @@ frame    1 | bars 4 | cost   11.8 ms
 | 耗时 | 毫秒（ms），单帧处理时间 |
 | 长度 | 长边 / 短边，单位像素 |
 
-## 8. 中间结果与对比（提交证据）
+## 8. 中间结果与对比
 
 | 证据 | 路径 | 内容 |
 | --- | --- | --- |
@@ -242,25 +242,18 @@ frame    1 | bars 4 | cost   11.8 ms
 5. 输出视频为 `mp4v` 编码的 mp4，个别播放器对 `mp4v` 的时长解析偏保守，
    建议用 VLC 或 `ffprobe` 查看时长。
 
-## 11. 未完成事项
 
-任务二（相机标定与 AprilTag 位姿）与任务三（模拟串口发送）尚未实现，
-本仓库目前只包含任务一。已完成的是环境部署、仓库结构、参数与证据整理。
-计划方案：任务二用棋盘格标定得到内参与畸变，用 `apriltag` 检测 tag36h11 并解算 `R`、`t`；
-任务三按考核规定的 CV1 文本协议把位姿通过串口发出，依赖项已在 `requirements.txt` 中以注释列出。
-
-## 12. 参考来源
+## 11. 参考来源
 
 | 来源 | 用途 |
 | --- | --- |
 | 考核手册提供的 [Ubuntu 环境部署](https://blog.csdn.net/weixin_43628293/article/details/147103949) | 环境搭建 |
 | 考核手册提供的 [Git 仓库构建](https://www.bilibili.com/video/BV1rsdQBpEV5/) | 仓库管理 |
 | 考核手册提供的 [OpenCV 教程](https://www.runoob.com/opencv/opencv-tutorial.html) | OpenCV 入门 |
-| 考核视频（百度网盘，提取码 `xik2`） | 输入素材 |
 | OpenCV 官方文档：颜色空间转换、形态学操作、轮廓与 `approxPolyDP`、`minAreaRect` | 算法接口 |
 | GStreamer matroskamux 采用 1 ms 时间基准 | 解释容器帧率被读成 1000 fps 的原因 |
 
-## 13. 提交物清单
+## 12. 提交清单
 
 | 材料 | 路径 |
 | --- | --- |
@@ -268,12 +261,10 @@ frame    1 | bars 4 | cost   11.8 ms
 | 代表帧截图 | `outputs/screenshots/channels/`、`outputs/screenshots/morphology/`、`outputs/screenshots/contours/` |
 | 逐帧处理日志 | 运行 `python main.py | tee outputs/log_task1.txt` 得到 |
 | 参数对比说明 | 本文第 4.1、4.2、5、8 节 |
-| 输入素材 | 考核提供的 `test_video2.webm`（体积较大，未纳入 git，下载地址见考核手册） |
+| 输入素材 | 考核提供的 `test_video2.webm` |
 
-## 14. 版本核对
+## 13. 版本核对
 
 ```bash
 python -c "import sys, cv2, numpy; print(sys.version.split()[0], cv2.__version__, numpy.__version__)"
 ```
-
-把输出填回第 1 节的版本表格即可。

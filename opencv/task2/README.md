@@ -10,14 +10,14 @@
 
 | 项目 | 版本 / 说明 |
 | --- | --- |
-| 操作系统 | Ubuntu 26.04 LTS（实体机，非 WSL2） |
+| 操作系统 | Ubuntu 26.04 LTS |
 | 语言 | Python 3.14.4 |
 | OpenCV | opencv-python 5.0.0.93 |
 | 数值库 | numpy 2.5.3 |
 | AprilTag 库 | **pupil-apriltags 1.0.4.post11**（家族 `tag36h11`；本项目用其检测接口，位姿用 `cv2.solvePnP` 解算） |
 | 图像库 | Pillow 12.3.0（仅 `tools/make_patterns.py` 生成打印素材用） |
 | 开发工具 | VS Code（Python / Pylance / Python Debugger） |
-| 虚拟环境 | `~/Projects/PythonProjects/.venv`（项目上层，与 task1 共用） |
+| 虚拟环境 | `~/Projects/PythonProjects/.venv` |
 
 安装与自检：
 
@@ -143,7 +143,7 @@ python tools/make_docs_figures.py                                    # -> assets
 
 ## 4. 摄像头接入
 
-先跑一次诊断工具，确认相机到底能给什么（换机器/换相机时也同样先跑它）：
+先跑一次诊断工具，确认相机到底能给什么：
 
 ```bash
 python tools/probe_camera.py
@@ -362,7 +362,7 @@ seq      0 | t       0 ms | valid 1 | id   0 | x    123.4 y    -45.6 z    812.3 
 | [AprilTag 官方站](https://april.eecs.umich.edu/software/apriltag) | 家族定义与位姿说明 |
 | OpenCV `solvePnP` / `SOLVEPNP_SQPNP` / `undistort` / `drawFrameAxes` 文档 | 位姿与坐标轴绘制 |
 
-## 13. 提交物清单（任务二部分）
+## 13. 提交清单
 
 | 材料 | 位置 |
 | --- | --- |
@@ -381,5 +381,3 @@ seq      0 | t       0 ms | valid 1 | id   0 | x    123.4 y    -45.6 z    812.3 
 ```bash
 python -c "import sys, cv2, numpy, pupil_apriltags; print(sys.version.split()[0], cv2.__version__, numpy.__version__, pupil_apriltags.__version__)"
 ```
-
-把输出填回第 1 节的版本表格即可。
