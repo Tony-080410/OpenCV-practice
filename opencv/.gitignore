@@ -1,24 +1,22 @@
 # 任务提交仓库：只留源码、参数、说明与必要证据，
 # 中间产物（缓存、临时输出）不入库。大素材若超限，改为在 README 写下载位置。
 
-# ---- Python 缓存与虚拟环境（一律不入库）----
+# ---- Python 缓存与虚拟环境----
 __pycache__/
 *.py[cod]
 *.pyo
 .venv/
-venv/
-env/
+
 *.egg-info/
 .pytest_cache/
 
 # ---- 编辑器 / IDE ----
 .vscode/
-.idea/
 *.swp
 *~
 
 # ---- 系统与下载残留 ----
-# Windows 下载文件的附加数据流标记（从网盘/浏览器下载后常见）
+# Windows 下载文件的附加数据流标记
 *Zone.Identifier
 *:Zone.Identifier
 .DS_Store
