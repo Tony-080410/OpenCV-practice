@@ -64,13 +64,18 @@ class Coverage:
         return f"已覆盖 {self.covered}/{self.grid * self.grid} 个区域，继续换位置/距离/倾斜"
 
 
-def save_frame(frame: np.ndarray, corners, spec: BoardSpec,
-               outdir: Path, coverage: Coverage, index: int) -> bool:
-    """存图。corners 是调用方（预览循环）已经算出的角点，这里不重复检测。"""
+def save_frame(frame: np.ndarray, corners, outdir: Path, coverage: Coverage,
+               index: int) -> bool:
+    """存图。corners 是调用方（预览循环）已经算出的角点，这里不重复检测。
+
+    ★ 存下去的必须是**没有任何标记的原始帧**：角点标记会盖住黑白边界，
+    之后 `main.py calib` 就再也检测不到角点 —— 实测把标记画进保存的图里，
+    16/16 张全部失效、有效图 0 张、标定直接失败。
+    所以标记只画在预览用的 `view`（frame 的副本）上，见下面的预览循环。
+    """
     ok = corners is not None
     if ok:
         coverage.update(corners, frame.shape[1], frame.shape[0])
-        cv2.drawChessboardCorners(frame, spec.pattern_size, corners, True)
     path = outdir / f"calib_{index:03d}.png"
     saved = cv2.imwrite(str(path), frame)
     print(f"[存图] {path.name}  角点{'找到' if ok else '未找到（这张大概率会被标定跳过，建议重拍）'}"
@@ -149,9 +154,9 @@ def main() -> int:
                 do_save = key == ord(" ")
 
             if do_save:
-                # 存原始帧（不存画了提示的 view，避免标记污染标定图）；
+                # 存原始帧（不存画了提示的 view）：标记会污染标定图，见 save_frame 的说明。
                 # 直接复用预览循环里已经算出的角点，不再重复检测一次
-                if save_frame(frame.copy(), corners if ok_cb else None, spec,
+                if save_frame(frame.copy(), corners if ok_cb else None,
                               outdir, coverage, index):
                     good += 1
                 saved += 1

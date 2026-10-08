@@ -93,13 +93,29 @@ def cmd_demo(a: argparse.Namespace) -> int:
     _KEEP_ALIVE.append(pipe)
 
     writer = None
-    if a.record:
+    writer_fps = float(a.record_fps) if a.record_fps > 0 else 30.0
+    rec_t0 = 0.0
+    # 录像/日志的落盘路径：默认是 config 里写死的交付物路径，可用 --record-out / --log-out 改。
+    # 试录时把它们指到 /tmp，就不会覆盖 outputs/ 里已有的交付物（给任一个就等于开录像）。
+    want_record = bool(a.record or a.record_out or a.log_out)
+    video_path = Path(a.record_out) if a.record_out else config.DEMO_VIDEO
+    log_path = Path(a.log_out) if a.log_out else config.DEMO_LOG
+    if want_record:
+        video_path.parent.mkdir(parents=True, exist_ok=True)
+        if video_path.exists():
+            print(f"[警告] {video_path} 已存在，本次会覆盖它"
+                  f"（想保留就换 --record-out）")
         fourcc = cv2.VideoWriter_fourcc(*config.OUTPUT_VIDEO_FOURCC)
-        writer = cv2.VideoWriter(str(config.DEMO_VIDEO), fourcc,
-                                 max(info.fps, 1.0), (info.width, info.height))
+        writer = cv2.VideoWriter(str(video_path), fourcc, writer_fps,
+                                 (info.width, info.height))
         if not writer.isOpened():
-            print(f"[警告] 打不开视频写入器，跳过录像：{config.DEMO_VIDEO}")
+            print(f"[警告] 打不开视频写入器，跳过录像：{video_path}")
             writer = None
+        else:
+            print(f"[信息] 录像 {writer_fps:.0f} fps 写入（相机标称 {info.fps:.1f} fps），"
+                  f"按真实时间轴重复/丢弃帧：回放与真实动作等速，"
+                  f"避免“处理十几 fps 却按 30 fps 写”导致的快放。")
+            rec_t0 = time.monotonic()
 
     log_lines: list[str] = []
     dump_fp = None
@@ -109,6 +125,7 @@ def cmd_demo(a: argparse.Namespace) -> int:
     t_start = time.monotonic()
     seq = 0
     n_frame = n_valid = 0
+    n_written = 0
     prev_valid = False
     try:
         while True:
@@ -151,14 +168,23 @@ def cmd_demo(a: argparse.Namespace) -> int:
                 visualize.draw_pose_axes(shown, target_det, result.pose, result.K_used,
                                          pipe.edge_m, result.D_used)
 
+            ids = sorted({d.tag_id for d in result.detections})
+            id_txt = "、".join(f"{i}(目标)" if i == a.target_id else str(i) for i in ids)
             extra = [f"frame {n_frame}  seq {seq}  cost {result.cost_ms:.1f} ms",
-                     f"detected {len(result.detections)} tag(s)"]
+                     f"本帧检出 ID：{id_txt if ids else '无'}"
+                     f"   共 {len(result.detections)} 个（目标 ID {a.target_id}）"]
             hud = visualize.format_pose_lines(target_det, result.pose,
                                               result.valid, result.reason, extra)
             visualize.draw_hud(shown, hud)
 
             if writer is not None:
-                writer.write(shown)
+                # 时间轴对齐：让"已写入帧数 / 写入帧率"追上真实耗时。
+                # 处理比写入慢就重复写同一帧，处理比写入快就这一帧不写（=丢帧）。
+                # 视频时长 == 真实耗时，回放既不快放也不慢放。
+                target = int((time.monotonic() - rec_t0) * writer_fps) + 1
+                while n_written < target:
+                    writer.write(shown)
+                    n_written += 1
             n_frame += 1
             n_valid += int(result.valid)
             seq += 1
@@ -191,10 +217,12 @@ def cmd_demo(a: argparse.Namespace) -> int:
 
     print(f"[完成] 处理 {n_frame} 帧，其中位姿有效 {n_valid} 帧"
           f"（{100.0 * n_valid / max(n_frame, 1):.1f}%）。")
-    if a.record:
-        config.DEMO_LOG.parent.mkdir(parents=True, exist_ok=True)
-        config.DEMO_LOG.write_text("\n".join(log_lines) + "\n", encoding="utf-8")
-        print(f"[完成] 演示视频 {config.DEMO_VIDEO}；日志 {config.DEMO_LOG}")
+    if want_record:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_path.write_text("\n".join(log_lines) + "\n", encoding="utf-8")
+        print(f"[完成] 演示视频 {video_path}（{writer_fps:.0f} fps，写 {n_written} 帧 = "
+              f"{n_written / writer_fps:.1f} s 时间轴；真实 {time.monotonic() - rec_t0:.1f} s）；"
+              f"日志 {log_path}")
     if dump_fp is not None:
         print(f"[完成] 逐帧完整位姿（含 R 矩阵）{a.dump}")
     return EXIT_OK
@@ -305,6 +333,13 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("--seconds", type=float, default=0.0, help="运行秒数，0 表示不限（按 q/ESC 退出）")
     d.add_argument("--max-frames", type=int, default=0, help="只处理前 N 帧，0 表示不限")
     d.add_argument("--record", action="store_true", help="保存演示视频与日志")
+    d.add_argument("--record-out", default=None,
+                   help=f"演示视频输出路径（默认 {config.DEMO_VIDEO}）。试录时指到 /tmp 就不会覆盖交付物；"
+                        f"给了它就等于开录像")
+    d.add_argument("--log-out", default=None,
+                   help=f"演示日志输出路径（默认 {config.DEMO_LOG}）")
+    d.add_argument("--record-fps", type=float, default=0.0,
+                   help="录像写入帧率（默认 30）；录像按真实时间轴重复/补帧，回放≈实时")
     d.add_argument("--no-calib", action="store_true", help="不加载标定参数（只看检测通路）")
     d.add_argument("--tag-mm", type=float, default=config.TAG_EDGE_MM,
                    help="Tag 黑框外边实测边长（mm），临时覆盖 config")

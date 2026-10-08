@@ -34,14 +34,14 @@ CAMERA_EXPOSURE_ABSOLUTE = 156.0
 # ---------- AprilTag ----------
 TAG_FAMILY = "tag36h11"
 TARGET_ID = 0                    # 要选中并发布位姿的 Tag ID
-TAG_EDGE_MM = 100.0              # 【实测填写】打印后量出的黑框外边边长，毫米
+TAG_EDGE_MM = 138.0              # 【实测】A4 打印 phone_screen 版 ID 0 页，直尺量黑框外边 = 138 mm
 TAG_QUAD_DECIMATE = 1.0          # 1.0 = 不降采样，最准；小图别调小
 TAG_REFINE_EDGES = 1
 
 # ---------- 相机标定 ----------
 BOARD_INNER_COLS = 9             # 内角点列数（对应 10 个方格）
 BOARD_INNER_ROWS = 6             # 内角点行数（对应 7 个方格）
-BOARD_SQUARE_MM = 20.0           # 【实测填写】单个方格边长，毫米
+BOARD_SQUARE_MM = 15.98           # 【实测填写】单个方格边长，毫米
 CALIB_TARGET_COUNT = 20          # 采集目标张数（手册建议 15~25）
 CALIB_MIN_COUNT = 8              # 少于这个数量不出结果
 # 采集时的覆盖率提示：把画面分 3x3，希望各区域都拍到

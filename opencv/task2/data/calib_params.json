@@ -1,0 +1,80 @@
+{
+  "K": [
+    [
+      826.6767928312695,
+      0.0,
+      629.808119579712
+    ],
+    [
+      0.0,
+      821.1541944490695,
+      350.1256362372872
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "D": [
+    0.07412200191531708,
+    -0.1924519467555158,
+    0.00474697841389583,
+    -0.0013053109887533093,
+    0.12391281135531496
+  ],
+  "width": 1280,
+  "height": 720,
+  "rms_reprojection_error_px": 0.9948271277270888,
+  "per_image_mean_error_px": {
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_000.png": 0.6617889404296875,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_001.png": 0.6832751035690308,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_002.png": 0.8776091933250427,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_003.png": 0.5032522082328796,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_004.png": 0.7379938960075378,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_005.png": 0.8886410593986511,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_006.png": 0.9251008033752441,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_007.png": 1.318645715713501,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_008.png": 0.395917683839798,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_009.png": 0.549834668636322,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_010.png": 0.8826931118965149,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_011.png": 1.46347177028656,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_012.png": 1.2007750272750854,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_013.png": 0.8521042466163635,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_014.png": 0.8206212520599365,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_015.png": 1.046201229095459,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_016.png": 0.5546097159385681,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_017.png": 0.49561500549316406,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_018.png": 0.5035161375999451,
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_019.png": 0.5036303400993347
+  },
+  "board": {
+    "inner_cols": 9,
+    "inner_rows": 6,
+    "square_mm": 15.98
+  },
+  "used_images": [
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_000.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_001.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_002.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_003.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_004.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_005.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_006.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_007.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_008.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_009.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_010.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_011.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_012.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_013.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_014.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_015.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_016.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_017.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_018.png",
+    "/home/tony/Projects/PythonProjects/opencv/task2/data/calib_images/calib_019.png"
+  ],
+  "skipped_images": [],
+  "note": "重投影误差 = 用解出的内参把棋盘格角点投回图像与检测点的偏差（像素），反映标定质量；位姿精度还受角点检测与 Tag 边长测量影响。"
+}

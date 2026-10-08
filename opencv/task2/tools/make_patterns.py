@@ -91,8 +91,12 @@ def fetch_official(dest: pathlib.Path, tag_id: int = 0) -> np.ndarray:
 
 
 def make_tag_page(tag: np.ndarray, edge_mm: float, out: pathlib.Path,
-                  page_key: str = "a4"):
-    """tag 页：黑框外边 = edge_mm；官方图案自带 1 单元白边，四周再留静默区。"""
+                  page_key: str = "a4", tag_id: int = 0):
+    """tag 页：黑框外边 = edge_mm；官方图案自带 1 单元白边，四周再留静默区。
+
+    tag_id 只用于**页面上印的说明文字**（"ID N"），图案本身由调用方传进来。
+    标题里的 ID 必须跟着实际 ID 走：写死 ID 0 会让 ID 1/2/3 的打印页标签全错。
+    """
     cells = tag.shape[0]                        # 10
     cell_mm = edge_mm / 8.0                     # 黑框外边跨 8 个单元
     cell_px = int(round(cell_mm * PPMM))
@@ -110,7 +114,7 @@ def make_tag_page(tag: np.ndarray, edge_mm: float, out: pathlib.Path,
     assert min(fx0, fy0, page_w - fx1, page_h - fy1) / PPMM >= QUIET_MM
 
     text_block(d, 15, 14, [
-        ("AprilTag  tag36h11  ID 0（官方图案，AprilRobotics/apriltag-imgs）", 5.0),
+        (f"AprilTag  tag36h11  ID {tag_id}（官方图案，AprilRobotics/apriltag-imgs）", 5.0),
         (f"黑框外边 = {edge_mm:.1f} mm —— 位姿解算用的就是这个边长", 3.6),
         (f"含白边整张 = {cell_mm * cells:.1f} mm，四周留白别裁掉", 3.2),
         ("打印选「实际大小 / 100%」，不要缩放；打印后用页脚校验尺复核", 3.2),
@@ -130,7 +134,9 @@ def make_tag_page(tag: np.ndarray, edge_mm: float, out: pathlib.Path,
     ])
 
     page.save(out, "PDF", resolution=PPMM * 25.4)
-    page.save(out.with_suffix(".png"), "PNG", resolution=PPMM * 25.4)
+    # PNG 必须用 dpi=（不是 resolution=）：PIL 的 PNG 插件不认 resolution，
+    # 静默丢弃 → 存出来的图没有 pHYs，打印程序只能瞎猜 DPI，物理尺寸全错。
+    page.save(out.with_suffix(".png"), "PNG", dpi=(PPMM * 25.4, PPMM * 25.4))
     return dict(page=page, frame_mm=((fx1 - fx0) / PPMM, (fy1 - fy0) / PPMM),
                 cell_px=cell_px, tag_mm=cell_mm * cells, edge_mm=edge_mm)
 
@@ -171,7 +177,9 @@ def make_chessboard_page(cols, rows, square_mm, out, page_key="a4"):
     ])
     draw_ruler(d, 15, page_h / PPMM - 22, 100.0, "校验尺 100.0 mm：量出偏差 > 1 mm 就重新打印")
     page.save(out, "PDF", resolution=PPMM * 25.4)
-    page.save(out.with_suffix(".png"), "PNG", resolution=PPMM * 25.4)
+    # PNG 必须用 dpi=（不是 resolution=）：PIL 的 PNG 插件不认 resolution，
+    # 静默丢弃 → 存出来的图没有 pHYs，打印程序只能瞎猜 DPI，物理尺寸全错。
+    page.save(out.with_suffix(".png"), "PNG", dpi=(PPMM * 25.4, PPMM * 25.4))
     return dict(page=page, orient=orient, board_mm=(bw / PPMM, bh / PPMM),
                 square_mm=square_mm, inner=(cols, rows))
 
@@ -237,7 +245,7 @@ def main():
         return 0
 
     tag_pdf = outdir / f"apriltag_36h11_id{a.tag_id}_{a.tag_mm:g}mm.pdf"
-    t = make_tag_page(tag, a.tag_mm, tag_pdf, a.page)
+    t = make_tag_page(tag, a.tag_mm, tag_pdf, a.page, a.tag_id)
     print(f"[2] tag 页 {tag_pdf.name}：黑框外边 {t['frame_mm'][0]:.2f} x {t['frame_mm'][1]:.2f} mm"
           f"（{t['cell_px']}px/单元），整张 {t['tag_mm']:.1f} mm，页面 {a.page.upper()} 竖版")
 

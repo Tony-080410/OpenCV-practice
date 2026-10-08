@@ -94,17 +94,18 @@ def panel_tag(d: ImageDraw.ImageDraw, img: Image.Image) -> None:
     d.text((cx + 200, cy - 16), "x 右", font=body, fill=BLUE)
     arrow(d, (cx, cy), (cx, cy + 190), GREEN, 3)                   # y
     d.text((cx + 10, cy + 200), "y 下", font=body, fill=GREEN)
-    # z 出纸面：原点画 ⊙，用引线把说明拉到 tag 外面，避免压住图案
+    # z 垂直纸面指向纸背（背离相机）：工程图里"进纸面"的符号是 ⊗（圆圈加叉）
     d.ellipse([cx - 14, cy - 14, cx + 14, cy + 14], outline=BLACK, width=3)
-    dot(d, (cx, cy), 5, BLACK)
+    d.line([(cx - 10, cy - 10), (cx + 10, cy + 10)], fill=BLACK, width=3)
+    d.line([(cx - 10, cy + 10), (cx + 10, cy - 10)], fill=BLACK, width=3)
     lx, ly = cx - side // 2 - 20, cy - 40
     d.line([(cx - 16, cy - 6), (lx, ly)], fill=BLACK, width=2)
-    d.text((lx - 10, ly), "z 出纸面朝相机", font=font(21), fill=BLACK, anchor="rm")
+    d.text((lx - 10, ly), "z 垂直纸面指向纸背（背离相机）", font=font(21), fill=BLACK, anchor="rm")
 
     d.text((60, 60), "① Tag 局部坐标系与角点次序", font=font(30), fill=BLACK)
     d.text((60, 108), "corners[0..3] = 左下、右下、右上、左上（左下起、逆时针）",
            font=font(23), fill=BLACK)
-    d.text((60, 146), "tag 系：原点在 Tag 中心，x 右、y 下、z 垂直纸面指向相机",
+    d.text((60, 146), "tag 系：原点在 Tag 中心，x 右、y 下、z 垂直纸面指向纸背（背离相机，右手系）",
            font=font(23), fill=BLACK)
     d.text((60, 850), "⚠ 角点顺序错了不会报错，只会让位姿整体差 90°/180°（重投影残差依然很小）",
            font=font(23), fill=RED)

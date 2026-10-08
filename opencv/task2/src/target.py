@@ -35,7 +35,12 @@ def evaluate(detections: list[TagDetection], target_id: int = None) -> TargetSta
     tid = config.TARGET_ID if target_id is None else target_id
     det = select_target(detections, tid)
     if det is None:
-        return TargetState(False, f"未检测到 ID {tid}", None)
+        # 区分"画面里什么都没有"和"有 tag 但不是我要的 ID"——这两种情况
+        # 对使用者是完全不同的意思，之前都写成"未检测到 ID x"，容易被读成前者。
+        if not detections:
+            return TargetState(False, "画面里没有 tag", None)
+        seen = "、".join(str(i) for i in sorted({d.tag_id for d in detections}))
+        return TargetState(False, f"画面里有 ID {seen}，但不是目标 ID {tid}", None)
     if det.hamming != 0:
         return TargetState(False, f"解码有误 hamming={det.hamming}", det)
     if det.decision_margin < config.MIN_DECISION_MARGIN:

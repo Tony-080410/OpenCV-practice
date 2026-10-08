@@ -1,0 +1,7 @@
+# 任务三自身只多需要一个串口库
+pyserial>=3.5
+
+# 只有 --source live（实时接入任务二）时才需要下面这些，它们在任务二里已经装好：
+#   opencv-python, numpy, pupil-apriltags   —— 见 ../task2/requirements.txt
+# 只跑 --source examples / dump 时不需要它们。
+numpy>=1.24

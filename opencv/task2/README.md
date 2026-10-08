@@ -23,7 +23,8 @@
 
 ```bash
 cd task2
-source ../.venv/bin/activate          # 或 ../.venv/bin/python main.py ... 直接跑
+source ../../.venv/bin/activate       # 或 ../../.venv/bin/python main.py ... 直接跑
+# 注意路径：仓库根在 PythonProjects，venv 与根同级，所以从 task2 出发是 ../../.venv
 pip install -r requirements.txt
 
 # 最小自检：版本 + 库都能用
@@ -115,18 +116,28 @@ python tools/make_docs_figures.py                                    # -> assets
 | 命令 | 产物 | 输出路径 |
 | --- | --- | --- |
 | `tools/probe_camera.py` | 无文件 | —（只打印相机能力） |
-| `tools/make_patterns.py` | 打印素材：tag 页、棋盘格页、手机屏测试图、官方图案原件 | `assets/patterns/`，默认文件名：`tag36h11_00000_official.png`、`apriltag_36h11_id0_100mm.pdf`（+`.png`）、`chessboard_9x6_20mm.pdf`（+`.png`）、`apriltag_36h11_id0_phone_screen.png`（名字随 `--tag-mm/--square-mm/--tag-id` 变） |
+| `tools/make_patterns.py` | 打印素材：tag 页、棋盘格页、手机屏测试图、官方图案原件 | `assets/patterns/`，默认文件名：`tag36h11_00000_official.png`、`apriltag_36h11_id0_100mm.png`（+`.pdf`）、`chessboard_9x6_20mm.png`（+`.pdf`）、`apriltag_36h11_id0_phone_screen.png`（名字随 `--tag-mm/--square-mm/--tag-id` 变） |
+| `tools/make_screen_chessboard.py` | 手机屏版棋盘格（没条件打印时的兜底） | `assets/patterns/chessboard_{cols}x{rows}_phone_screen.png`；`--outdir` 可改 |
 | `tools/make_docs_figures.py` | 坐标系与角点次序示意图 | `assets/docs/frames_and_corners.png` |
 | `tools/capture_calib.py` | 标定原图（每存一张一个文件） | `data/calib_images/calib_NNN.png`；序号从目录已有张数接着排，**不覆盖旧图**；`--outdir` 可改 |
 | `main.py calib` | 内参、畸变、分辨率、RMS、逐图误差 | `data/calib_params.json`；`--out` 可改 |
-| `main.py demo --record` | 演示视频、逐帧日志 | `outputs/videos/task2_pose_demo.mp4`、`outputs/logs/task2_pose_demo.txt`（同名旧文件会被覆盖；打不开视频写入器时只给 `[警告]` 并仍然写日志） |
+| `tools/check_calib_quality.py` | 标定采集体检：逐图位置/棋盘像素宽/距离/倾角/清晰度 + 判据 | 无文件（只打印）；`--json <路径>` 可导出报告 |
+| `main.py demo --record` | 演示视频、逐帧日志 | `outputs/videos/task2_pose_demo.mp4`、`outputs/logs/task2_pose_demo.txt`（同名旧文件会被覆盖，跑之前会打印一行提醒；**试录请用 `--record-out/--log-out` 指到 /tmp**；打不开视频写入器时只给 `[警告]` 并仍然写日志） |
 | `main.py demo --dump <路径>` | 逐帧完整位姿 JSONL（含 R 矩阵） | 由 `--dump` 指定，例如 `outputs/logs/pose.jsonl`；**不指定就不写文件**；同名旧文件会被覆盖 |
 | `main.py demo` 中按 `s` | 当前帧截图 | `outputs/screenshots/shot_NNNNNN.png`（NNNNNN = 帧序号） |
 | `main.py check` | 无文件 | —（只打印参数与分辨率核对结果） |
 | `tools/validate_pose_sim.py` | 无文件 | —（只打印误差表，见第 8 节） |
+| `tools/summarize_dump.py` | 演示位姿汇总：距离/倾角范围、有效帧比例、异常原因分布 | 无文件（只打印）；`--json <路径>` 可导出报告；`--dump` 指定输入 |
 
 `outputs/{videos,logs,screenshots}`、`data/calib_images` 与 `assets/patterns` 在首次运行时自动创建，不需要手动建目录；
 所有路径都定义在 `config.py` 的「路径」与「输出目录」两节。
+
+**关于录像帧率**：本机实际处理约 9~14 fps，而视频文件的帧率是固定的（默认 30 fps）。
+若"处理一帧写一帧"，视频会被快速播完（时长只有真实耗时的 1/2），看起来像快放。
+所以录像按**真实时间轴**写：处理比写入慢就重复写同一帧，处理比写入快就不写（丢帧），
+使"已写入帧数 ÷ 写入帧率"始终跟上真实耗时 —— 视频时长 = 真实时长（实测比值 1.003）。
+代价是每个处理帧约重复 3 次，录制时编码开销会让处理速度从 ~14 fps 降到 ~10 fps
+（不录像时不受影响）。可用 `--record-fps` 改写入帧率（越小重复越少）。
 
 | 参数 | 默认值 | 含义 |
 | --- | --- | --- |
@@ -134,6 +145,9 @@ python tools/make_docs_figures.py                                    # -> assets
 | `demo --seconds` | `0` | 运行秒数，0 = 不限，按 q/ESC 退出 |
 | `demo --max-frames` | `0` | 只处理前 N 帧 |
 | `demo --record` | 关 | 保存演示视频与逐帧日志到 `outputs/` |
+| `demo --record-out` | 关 | **录像输出路径**（默认 `outputs/videos/task2_pose_demo.mp4`）。试录时指到 `/tmp/xx.mp4` 就不会覆盖交付物；给了它等于开录像（不必再加 `--record`） |
+| `demo --log-out` | 关 | 日志输出路径（默认 `outputs/logs/task2_pose_demo.txt`） |
+| `demo --record-fps` | `30` | 录像写入帧率。录像会按**真实时间轴**重复/丢弃帧，所以回放速度与真实动作一致（见下） |
 | `demo --dump` | 关 | 逐帧完整位姿写 JSONL（含 R 矩阵、rvec、距离、耗时），可核对也可给任务三用 |
 | `demo --tag-mm` | `config.TAG_EDGE_MM` | 临时覆盖 Tag 实测边长（用手机屏当 Tag 时用） |
 | `demo --target-id` | `config.TARGET_ID` | 临时覆盖要选中并发布位姿的 Tag ID |
@@ -179,8 +193,13 @@ Target 太近（约 20～30 cm 以内）会发虚。建议 Tag 工作在 **30～
 ## 5. 坐标系、单位与角点次序
 
 **相机光学坐标系**：原点在相机光心，X 向右、Y 向下、Z 向镜头前方（右手系，Z 是光轴）。
-**Tag 局部坐标系**：原点在 Tag 中心，x 右、y 下、z 垂直纸面指向相机；
+**Tag 局部坐标系**：原点在 Tag 中心，x 右、y 下、**z 垂直纸面指向纸背（背离相机）**；
 “上下左右”指**打印好的 Tag 正着看（方向标记朝上）**时的方向 —— 打印素材上已印方向标记。
+
+> 关于 z 的朝向：这是**右手系**（x×y = z），与相机光学系同手性，所以 R 是纯旋转
+> （det R = +1），可以直接取旋转向量发给任务三。注意有些资料把 Tag 系写成
+> “z 指向相机”，那是左手系 —— **本仓库以代码实际输出为准**：
+> 实测正对相机时 `R` 的第三列 ≈ `(0, 0, +1)`（拿 `--dump` 出来的 `pose.jsonl` 就能核对）。
 
 变换关系（任务三也按这个定义发数据）：
 
@@ -214,18 +233,29 @@ p_camera = R · p_tag + t
 
 ## 6. 打印素材与实测
 
-`tools/make_patterns.py` 生成（尺寸由程序保证，PDF 内经 MediaBox 校验）：
+`tools/make_patterns.py` 生成（尺寸由程序保证，页面写入 304.8 dpi 的物理尺寸信息）：
 
 | 文件 | 内容 |
 | --- | --- |
 | `assets/patterns/tag36h11_00000_official.png` | 官方图案原件（来自 AprilRobotics/apriltag-imgs） |
-| `assets/patterns/apriltag_36h11_id0_100mm.pdf` | A4 竖版：黑框外边 **100.0 mm**，含方向标记与 100 mm 校验尺 |
-| `assets/patterns/chessboard_9x6_20mm.pdf` | A4 横版：9×6 内角点，方格 **20.0 mm**，含校验尺 |
+| `assets/patterns/apriltag_36h11_id0_100mm.png` | A4 竖版：黑框外边 **100.0 mm**，含方向标记与 100 mm 校验尺 |
+| `assets/patterns/chessboard_9x6_20mm.png` | A4 横版：9×6 内角点，方格 **20.0 mm**，含校验尺 |
+
+同一条命令也会产出对应的 `.pdf` 版页（本项目仓库里只保留 `.png`；需要 PDF 时重跑即可）。
+
+**本次实际使用的 Tag**：`assets/patterns/practice/apriltag_36h11_id0_phone_screen.png` 印到 A4，
+黑框外边**实测 138.0 mm**（直尺）。该图最外圈是 1 单元白边，所以量到的黑色区域外沿**就是**
+黑框外边（读文件像素判定：暗区 824 px / 整张 1030 px = 8/10，不必再乘 8/10）。
+程序参数 `config.py: TAG_EDGE_MM = 138.0`，完整记录见 `data/measurements.md` 第 2 节。
+该图没有页脚校验尺，交叉验证改用**边框厚度**（应为 1 单元 ≈ 17.3 mm）。
+ID 1/2/3 的练习张也在 `practice/`，用 `demo --target-id N` 切换目标。
 
 操作要求：
 
 1. **打印选“实际大小 / 100%”**，不要用“适合页面”缩放；打完先量页内 100 mm 校验尺，
    偏差超过约 1 mm 就重新打印。
+   PNG 已写入 304.8 dpi 物理尺寸信息（pHYs），按“实际大小”打印即可还原真实毫米；
+   若打印程序忽略 DPI，就手动把缩放设成 100%（别用“适应页面”）。
 2. 整张贴平在硬板上，不要折叠、不要覆膜（反光会让检测失败）。
 3. **打印后实测并把实测值填进 `config.py`**：
    * Tag 的**黑框外边**边长（不是整张纸、也不是含白边的宽度）→ `TAG_EDGE_MM`
@@ -348,6 +378,9 @@ seq      0 | t       0 ms | valid 1 | id   0 | x    123.4 y    -45.6 z    812.3 
 6. A4 上棋盘格只做到 20 mm 方格：25 mm 的板（250×175 mm）加页眉与校验尺要 240 mm，
    超过 A4 横版 210 mm，需 `--page a3`。
 7. 本机未配置打印机（`lpstat` 无目标），打印需在打印店或其他机器完成，注意选“实际大小”。
+8. `demo --record` 的输出路径写死在 `config.py`（`DEMO_VIDEO`/`DEMO_LOG`），**跑一次就原地覆盖**，
+   容易被"试录"清掉正式录的那条。试录请加 `--record-out /tmp/xx.mp4 --log-out /tmp/xx.txt`；
+   正式录像前如果目标文件已存在，程序会先打印一行 `[警告] … 已存在，本次会覆盖它`。
 
 ## 12. 参考来源
 
@@ -372,11 +405,33 @@ seq      0 | t       0 ms | valid 1 | id   0 | x    123.4 y    -45.6 z    812.3 
 | 标定原图 | `data/calib_images/` |
 | 标定参数文件 | `data/calib_params.json`（含内参、畸变、分辨率、RMS、逐图误差） |
 | 位姿检测演示 | `outputs/videos/task2_pose_demo.mp4`（含距离与角度变化） |
+| 演示截图（目标帧 + 非目标 ID 帧） | `outputs/screenshots/shot_*.png`（`000238/000344` 目标 ID 0，`000267/000373/000511` 非目标 ID） |
 | 演示日志（含 R、t 完整输出） | `outputs/logs/task2_pose_demo.txt` |
 | 逐帧完整位姿（可选，含 R 矩阵） | `outputs/logs/pose.jsonl`（用 `demo --dump` 指定路径生成） |
 | 链路回归证据 | `python tools/validate_pose_sim.py` 的输出（本 README 第 8 节表格） |
+| 评分项自检脚本（可现场复核） | `tools/check_calib_quality.py`（标定采集）、`tools/summarize_dump.py`（演示） |
 
-## 14. 版本核对
+## 14. 对照评分表自查（35 分）
+
+评分表出自考核手册。下表把每条给分细则落到**本仓库的具体文件或命令**上；
+括号里的命令都能复现表中的数字（需要相机或实体打印的除外）。
+
+| 评分项（分值） | 给分细则（手册摘要） | 本仓库的证据 | 复核命令 |
+| --- | --- | --- | --- |
+| Tag 与相机准备 4 | 打印正确家族/ID、图案平整 1；有效边长测量与记录 2；摄像头接入 1 | `data/measurements.md` 第 2 节：tag36h11 / ID 0、黑框外边 **横竖均 138.0 mm**（含量具、像素比例反推与防拉伸核对）；`config.py: TAG_EDGE_MM = 138.0`；相机 1280×720 MJPG @30fps | `python main.py check --camera 0` |
+| 标定采集与配置 6 | 清晰原图 2；位置、距离、倾斜方向有变化 2；内角点数与方格尺寸正确 2 | `data/calib_images/` 20 张原图；体检结果：**距离 217~337 mm（跨度 1.55）、棋盘倾角 8.7°~25.3°、九宫格覆盖 9/9、清晰度 105~154**；内角点 9×6、方格 **15.98 mm** | `python tools/check_calib_quality.py` |
+| 标定结果与使用 7 | 内参与畸变 2；分辨率 1；重投影误差记录并说明含义 1；解算用自己标定 1；畸变处理与内参匹配 2 | `data/calib_params.json`：K、D、1280×720、RMS **0.9948 px**、逐图误差（最好 0.40 / 中位 0.82 / 最差 1.46 px）、`note` 写明重投影误差含义；`data/measurements.md` 第 4 节；`src/pipeline.py` 去畸变后用**同一份**内参解算 | `python main.py calib` → `python main.py check`；`python tools/validate_pose_sim.py`（路径 C 故意用错内参偏 400~590 mm，实证内参必须与画面成对） |
+| 指定 Tag 检测与显示 5 | 指定 ID 2；中心 1；角点 1；三轴投影 1 | HUD 每帧给 `id / hamming / margin`；画面上有**四角框、中心点、三轴投影**（`cv2.drawFrameAxes`）；非目标 ID 用另一种颜色并明确标出 | `python main.py demo`（按 `s` 存截图到 `outputs/screenshots/`）；`shot_000238/000344` 是目标帧（绿框+三轴），`shot_000267/000373/000511` 是非目标帧（红框、不画三轴） |
+| 位姿与距离输出 8 | R、t 各 2；坐标系/变换方向/单位说明 2；直线距离且与 Z 深度区分 2 | HUD 同时显示 `t(m)`、`距离`、`Z 深度`、`rvec`；`--dump` 的 JSONL 含 `R`（3×3）、`t_m`、`depth_m`、`distance_m`、`reproj_error_px`；第 5 节写清相机系、Tag 系（z 指纸背）、`p_camera = R·p_tag + t`、单位（内部米 / 通信毫米） | `python main.py demo --dump outputs/logs/pose.jsonl` |
+| 目标选择与异常处理 3 | 保留全部检测、选择与检测分开 1；指定 ID 缺失 1；位姿不可用 1 | `src/tag_detect.py` 只做检测、`src/target.py` 只做选择；JSONL 的 `detections` 保留每帧全部检出（含非目标 ID）；三级原因文案："画面里没有 tag" / "画面里有 ID x，但不是目标 ID 0" / "位姿不可用：…"；截图 `shot_000267/000373/000511` 直接拍到 `valid=0 画面里有 ID 2/1/2，但不是目标 ID 0`，且非目标**不画三轴**（= 不发布位姿） | `python tools/summarize_dump.py`（按原因统计无效帧） |
+| 检测演示 2 | 距离与角度有变化 1；检测与位姿输出随之变化 1 | `outputs/videos/task2_pose_demo.mp4`：72.4 s / 538 帧 / 274 帧有效（50.9%；无效帧里大部分是**刻意演示**的非目标 ID 与空画面）；**Z 深度 241~437 mm、X −185~−31 mm、Y −33~95 mm、Tag 倾角 3.2°~35.2°** | `python tools/summarize_dump.py` 或直接看视频 |
+
+本次演示的无效帧原因分布（`tools/summarize_dump.py` 输出）：**"画面里没有 tag" 166 帧、
+"画面里有 ID 1，但不是目标 ID 0" 39 帧、ID 3 34 帧、ID 2 25 帧** —— 第 6 项要求的
+「指定 ID 缺失时处理正确」因此被演示到两种形态（**画面里没有 tag** / **有 tag 但不是指定 ID**），
+同时也说明「目标选择与检测分开」：ID 1/2/3 被检出了，但不会被当成目标发布位姿。
+
+## 15. 版本核对
 
 ```bash
 python -c "import sys, cv2, numpy, pupil_apriltags; print(sys.version.split()[0], cv2.__version__, numpy.__version__, pupil_apriltags.__version__)"

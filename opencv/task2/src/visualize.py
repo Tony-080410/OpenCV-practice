@@ -38,7 +38,11 @@ def draw_hud(image: np.ndarray, lines: list[str], origin: tuple[int, int] = None
 
 def draw_tag(image: np.ndarray, det: TagDetection, is_target: bool,
              label: str = "") -> None:
-    """画一个检测：四角、中心、ID 标注。"""
+    """画一个检测：四角、中心、ID 标注。
+
+    ID 用"实心色块 + 黑/白字"画在框角外侧：原来只把 id=N 小字写在框下方，
+    举着实物时很容易看漏，而"这个 tag 是 ID 几、是不是目标"恰恰是画面里最该一眼看懂的信息。
+    """
     color = config.COLOR_TARGET if is_target else config.COLOR_OTHER
     corners = det.corners.astype(np.int32).reshape(-1, 1, 2)
     cv2.polylines(image, [corners], True, color, 2, cv2.LINE_AA)
@@ -48,9 +52,16 @@ def draw_tag(image: np.ndarray, det: TagDetection, is_target: bool,
                     cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1, cv2.LINE_AA)
     cv2.circle(image, (int(det.center[0]), int(det.center[1])), 3,
                config.COLOR_CENTER, -1, cv2.LINE_AA)
-    text = label or f"id={det.tag_id}"
-    cv2.putText(image, text, (int(det.corners[0][0]), int(det.corners[0][1]) + 18),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
+
+    text = label or (f"ID {det.tag_id}（目标）" if is_target else f"ID {det.tag_id}")
+    scale, thick, pad = 0.75, 2, 6
+    (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, scale, thick)
+    x, y = int(det.corners[3][0]), int(det.corners[3][1]) - 8      # 左上角外侧
+    if y - th - pad * 2 < 0:                                       # 上方放不下就挪进框内
+        y = int(det.corners[3][1]) + th + 14
+    cv2.rectangle(image, (x - pad, y - th - pad), (x + tw + pad, y + pad), color, -1)
+    ink = (0, 0, 0) if sum(int(v) for v in color) > 380 else (255, 255, 255)
+    cv2.putText(image, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, scale, ink, thick, cv2.LINE_AA)
 
 
 def draw_pose_axes(image: np.ndarray, det: TagDetection, pose: PoseResult,
@@ -74,7 +85,7 @@ def format_pose_lines(det: TagDetection | None, pose: PoseResult | None,
     """把一帧的结论整理成 HUD 文本（只做格式化，不做判断）。"""
     lines = []
     if det is None:
-        lines.append(f"valid={int(valid)}  未检测到目标：{reason}")
+        lines.append(f"valid={int(valid)}  {reason}")
     else:
         lines.append(f"valid={int(valid)}  id={det.tag_id}  hamming={det.hamming}  "
                      f"margin={det.decision_margin:.1f}")
