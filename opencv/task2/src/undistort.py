@@ -1,11 +1,10 @@
-"""畸变处理：只负责“把画面变直”，并把与画面匹配的内参交出去。
+"""畸变处理：把画面变直，交出跟画面匹配的内参。
 
-策略（实测依据见 spike/RESULTS.md 第四节）：
-    用 cv2.undistort(frame, K, D)，**不裁剪、不改内参**（新的投影矩阵就是 K 本身），
-    之后检测与解算一律用 dist=0 + 同一个 K。
-好处是“解算用的内参”和“画面”天然成对，不出现原图内参配裁剪画面这类错配。
-对照数据：去掉畸变后解算误差更小（强倾斜场景 0.79mm -> 0.47mm），
-而内参分辨率错配时平移误差可达数百毫米。
+用 cv2.undistort(frame, K, D)，不裁剪、不改内参（新投影矩阵就是 K 本身），
+之后检测和解算一律用 dist=0 + 同一个 K。这样"解算用的内参"和"画面"天然成对，
+不会出现原图内参配裁剪画面这类错配。
+实测（见 spike/RESULTS.md 第四节）：去畸变后误差更小（强倾斜 0.79mm -> 0.47mm），
+内参分辨率错配时平移误差能到数百毫米。
 """
 from __future__ import annotations
 
@@ -23,7 +22,7 @@ class Undistorter:
     height: int
 
     def __post_init__(self) -> None:
-        # 入口归一化一次：cv2 的接口既接受 (5,) 也接受 (1,5)，统一成一维后面就不用到处 reshape
+        # 这里统一成一维：cv2 既收 (5,) 也收 (1,5)，后面就不用到处 reshape
         self.K = np.asarray(self.K, dtype=np.float64)
         self.D = np.asarray(self.D, dtype=np.float64).reshape(-1)
 

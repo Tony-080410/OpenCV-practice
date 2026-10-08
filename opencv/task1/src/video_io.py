@@ -78,8 +78,7 @@ def source_fps(path):
 
 
 def read_frame(path, index=0):
-    """顺序读到第 index 帧（tools/ 用）。
-    """
+    """顺序读到第 index 帧，tools/ 用。"""
     cap = open_video(path)
     frame = None
     for _ in range(index + 1):
@@ -93,7 +92,7 @@ def read_frame(path, index=0):
     return frame
 
 def create_writer(path, fps, size, fourcc="mp4v"):
-    """创建输出视频；size 是 (宽, 高)，写入帧的分辨率必须完全一致。"""
+    """创建输出视频。size 是 (宽, 高)，写入帧的分辨率得跟它一致。"""
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     code = fourcc if isinstance(fourcc, int) else cv2.VideoWriter_fourcc(*str(fourcc))
     return cv2.VideoWriter(str(path), code, float(fps), tuple(size))

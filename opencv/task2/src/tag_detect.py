@@ -1,12 +1,11 @@
-"""AprilTag 检测：只负责“画面里有哪些 Tag”，不做目标选择、不解算位姿。
+"""AprilTag 检测：只看"画面里有哪些 Tag"，不选目标、不解位姿。
 
-角点次序（实测确定，见 spike/RESULTS.md 第三节）：
+角点次序（实测，见 spike/RESULTS.md 第三节），tag 系 x 右、y 下，左下起逆时针：
     corners[0] 左下 (-s/2, +s/2)
     corners[1] 右下 (+s/2, +s/2)
     corners[2] 右上 (+s/2, -s/2)
     corners[3] 左上 (-s/2, -s/2)
-即 tag 系（x 右、y 下）下以左下角为起点、逆时针。
-官方图案与 cv2.aruco 生成的同 ID 图案相差 180°，本项目的 objp 以官方图案为准。
+官方图案与 cv2.aruco 生成的同 ID 图案差 180°，本项目 objp 以官方图案为准。
 """
 from __future__ import annotations
 

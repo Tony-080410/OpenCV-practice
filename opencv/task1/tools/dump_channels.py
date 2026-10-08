@@ -1,9 +1,4 @@
-"""原图、B/G/R 分通道、灰度图、两种颜色分割掩膜。
-
-用法:
-    python tools/dump_channels.py                                        # 默认第 0 帧
-    python tools/dump_channels.py --index 120 --out outputs/screenshots/f0120
-"""
+"""导出单帧的原图 / BGR 分通道 / 灰度 / 两种颜色分割掩膜，另出拼图。"""
 
 import argparse
 import sys

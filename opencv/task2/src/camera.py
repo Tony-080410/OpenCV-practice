@@ -1,11 +1,8 @@
-"""相机接入：打开、设置采集参数、抓帧。
+"""相机接入：打开、设采集参数、抓帧，只往上层交 BGR 帧。
 
-职责只有一件事：把 BGR 帧交给上层。不含任何检测、位姿或画图逻辑。
-
-V4L2 的坑：不显式设 MJPG，驱动只会给 640x480。所以顺序是
-先设 FOURCC，再设宽高，最后读回确认——设置可能被驱动拒绝，
-这时要如实报出实际分辨率，不能默默按请求的分辨率处理
-（内参与分辨率必须成对，见 README）。
+V4L2 的坑：不显式设 MJPG，驱动只给 640x480，所以要先设 FOURCC 再设宽高，最后读回
+确认。设置可能被驱动拒绝，得如实报出实际分辨率，不能按请求的分辨率处理
+（内参和分辨率必须成对，见 README）。
 """
 from __future__ import annotations
 
@@ -79,10 +76,10 @@ class Camera:
 
     @staticmethod
     def _apply_exposure(cap: cv2.VideoCapture) -> str:
-        """曝光策略：默认保持相机的自动曝光；配置要求锁定时切手动并回读确认。
+        """默认保持自动曝光；配置要求锁定时切手动并回读确认。
 
-        OpenCV 的 CAP_PROP_AUTO_EXPOSURE 在 V4L2 下 0.25=手动、0.75=自动。
-        回读很重要：驱动可能拒绝设置，这时要如实说出来，不能假装锁上了。
+        V4L2 下 CAP_PROP_AUTO_EXPOSURE：0.25=手动、0.75=自动。
+        驱动可能拒绝设置，回读对不上要如实说出来，不能假装锁上了。
         """
         if not config.CAMERA_LOCK_EXPOSURE:
             return "自动曝光（config.CAMERA_LOCK_EXPOSURE=False）"
@@ -100,7 +97,7 @@ class Camera:
         return "".join(chr((v >> (8 * i)) & 0xFF) for i in range(4)).strip()
 
     def read(self) -> tuple[bool, np.ndarray | None]:
-        """返回 (是否成功, BGR 帧)。失败时帧为 None，不抛异常，交给上层决定。"""
+        """返回 (是否成功, BGR 帧)。失败给 None，不抛异常，交给上层定。"""
         if self.cap is None:
             return False, None
         ok, frame = self.cap.read()

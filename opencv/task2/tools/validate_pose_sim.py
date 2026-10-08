@@ -1,15 +1,15 @@
-"""位姿链路回归测试（不需要相机、不需要打印）。
+"""位姿链路回归测试，不用相机不用打印。
 
-用 src/simulate.py 渲染出已知 R、t、已知畸变的画面，交给**正式代码路径**
-（src/tag_detect.py + src/pose.py + src/undistort.py）解算，与真值比对。
+用 src/simulate.py 渲染出已知 R、t、已知畸变的画面，交给正式代码路径
+（src/tag_detect.py + src/pose.py + src/undistort.py）解算，跟真值比。
 
 三条路径：
   A 原图 + 畸变系数直接解算
   B 去畸变（不裁剪、内参不变）+ dist=0 解算     <- 正式方案
-  C 内参误用半分辨率（故意做错，验证“内参与画面必须成对”）
+  C 内参误用半分辨率（故意做错，验证内参必须跟画面成对）
 
 运行：python tools/validate_pose_sim.py
-退出码非 0 表示 A/B 两条路径的误差超过阈值（阈值见 MAX_ERR_MM / MAX_ERR_DEG）。
+退出码非 0 说明 A/B 两条路径误差超阈值（阈值见 MAX_ERR_MM / MAX_ERR_DEG）。
 """
 from __future__ import annotations
 
@@ -33,8 +33,8 @@ MAX_ERR_DEG = 3.0          # 旋转误差阈值（度）
 W, H = 1280, 960
 DIST = np.array([-0.28, 0.11, 0.001, -0.002, 0.0])     # 典型桶形畸变
 
-# 保活表：main() 返回时局部变量会被释放，实测 OpenCV 5.0.x + apriltag 在这一步会随机段错误。
-# 把这些重对象挂到模块级引用上活到 os._exit，避开那段清理。
+# main() 返回时局部变量会被释放，实测 OpenCV 5.0.x + apriltag 在这一步会随机段错误。
+# 把重对象挂到模块级引用上活到 os._exit，避开那段清理。
 _KEEP_ALIVE: list = []
 
 
@@ -44,7 +44,7 @@ def rotation_error(R_est: np.ndarray, R_true: np.ndarray) -> float:
 
 
 def half_resolution_K(K: np.ndarray) -> np.ndarray:
-    """故意做错的内参：按半分辨率缩放（用来验证“内参必须与画面成对”）。"""
+    """故意做错的内参：按半分辨率缩放（用来验证"内参必须与画面成对"）。"""
     wrong = K.copy()
     wrong[0, 0] /= 2; wrong[1, 1] /= 2; wrong[0, 2] /= 2; wrong[1, 2] /= 2
     return wrong
@@ -110,9 +110,8 @@ def main() -> int:
 
 if __name__ == "__main__":
     code = main()
-    # OpenCV 5.0.x 与 apriltag 库在解释器退出阶段会段错误（实测 exit 139），
-    # 与检查结果无关。用 os._exit 带退出码直接退出，跳过会崩的那段清理，
-    # 这样这个脚本才能被当回归测试用（退出码 0/1 可信）。
+    # 解释器退出阶段 OpenCV 5.0.x + apriltag 会段错误（实测 exit 139），与检查结果无关。
+    # 用 os._exit 带退出码直接退出，跳过会崩的清理，脚本才能当回归测试用（退出码 0/1 可信）。
     sys.stdout.flush()
     sys.stderr.flush()
     os._exit(code)

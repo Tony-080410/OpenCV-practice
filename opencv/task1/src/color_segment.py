@@ -1,8 +1,7 @@
-"""颜色分割: BGR 帧 → 0/255 二值掩膜。
+"""颜色分割：BGR 帧进，0/255 掩膜出。
 
-两种方法都保留，方便在报告里做对比：
-  blue_dominance —— 蓝色通道比最强的红/绿通道高出多少，抗过曝；
-  hsv            —— 色相/饱和度/明度三通道同时限制，语义直观。
+两种方法都留着方便对比：blue_dominance 是 B 比最强的 G/R 高多少（抗过曝），
+hsv 是 H/S/V 三通道一起卡范围。
 """
 
 import cv2
@@ -12,10 +11,9 @@ import config
 
 
 def blue_dominance_mask(frame, thresh=config.DIFF_THRESH):
-    """蓝度超过阈值的区域置 255。
+    """蓝度超过阈值的置 255。
 
-    用 int16 相减而不是 cv2.subtract: 8 位减法会把负值截断为 0,
-    "橙红区域蓝度更低"这一信息就丢了，无法再用同一个阈值区分强弱。
+    得用 int16 算 B - max(G,R)：8 位减法把负值截成 0，橙红区也会跟着变白，分不开。
     """
     b, g, r = cv2.split(frame)
     dominance = b.astype(np.int16) - np.maximum(g, r).astype(np.int16)
@@ -32,7 +30,7 @@ def hsv_mask(frame, low=config.HSV_LOW, high=config.HSV_HIGH):
 
 def build_mask(frame, method=config.SEGMENT_METHOD, thresh=config.DIFF_THRESH,
                hsv_low=config.HSV_LOW, hsv_high=config.HSV_HIGH):
-    """按方法名分发；主程序只调用这一个入口。"""
+    """按方法名分发，主程序只走这一个入口。"""
     if method == "blue_dominance":
         return blue_dominance_mask(frame, thresh)
     if method == "hsv":

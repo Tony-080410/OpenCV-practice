@@ -1,10 +1,4 @@
-"""任务一：蓝色装甲板灯条识别。
-
-流程：读取 → 颜色分割 → 掩膜优化 → 轮廓提取 → 几何筛选 → 框选 → 保存视频
-用法:
-    python main.py [--video data/test_video2.webm] [--show]
-    python main.py
-"""
+"""任务一入口：读视频，逐帧分割、形态学、检测、画框，输出标记视频。"""
 
 import argparse
 import time
@@ -38,7 +32,7 @@ def main():
     width, height = video_io.video_info(cap)
     fps = config.OUTPUT_FPS or video_io.source_fps(args.video)
     writer = video_io.create_writer(args.output, fps, (width, height), config.FOURCC)
-    if not writer.isOpened():                    # 编码器不支持或路径不可写，别静默产出空视频
+    if not writer.isOpened():                    # 编码器不支持或路径不可写，否则会静默产出空视频
         print(f"[错误] 打不开视频写入器: {args.output}"
               f"（检查路径与编码 fourcc={config.FOURCC}）")
         cap.release()

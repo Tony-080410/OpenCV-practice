@@ -1,14 +1,12 @@
-"""采集标定图：实时预览 + 覆盖率提示 + 存图。
+"""采集标定图：实时预览、覆盖率提示、存图。
 
-用法（在 task2 目录下）：
+用法（在 task2 目录下跑）：
     python tools/capture_calib.py                 # 交互：SPACE 存图，q/ESC 退出
     python tools/capture_calib.py --auto 20 --interval 1.2   # 自动连拍（可配 --no-show 无窗口）
-    python tools/capture_calib.py --camera 0 --width 1280 --height 720
 
-要点（对应评分项“标定采集”）：
-  * 图片分辨率必须一致，且与后面检测时的分辨率相同，否则内参不能共用；
-  * 覆盖画面中部与四角、改变距离与倾斜方向 —— 界面上的 3x3 覆盖图会实时提示；
-  * 角点必须完整可见（别让棋盘格出画），存图时会立刻校验并提示“未找到角点”。
+图片分辨率要一致，且跟后面检测时相同，否则内参不能共用。覆盖中部和四角、变化距离和
+倾斜方向，界面上的 3x3 覆盖图会实时提示。角点要完整可见（别让棋盘格出画），存图时会
+马上校验并提示"未找到角点"。
 """
 from __future__ import annotations
 
@@ -66,12 +64,11 @@ class Coverage:
 
 def save_frame(frame: np.ndarray, corners, outdir: Path, coverage: Coverage,
                index: int) -> bool:
-    """存图。corners 是调用方（预览循环）已经算出的角点，这里不重复检测。
+    """存图。corners 是调用方（预览循环）已经算好的，这里不重复检测。
 
-    ★ 存下去的必须是**没有任何标记的原始帧**：角点标记会盖住黑白边界，
-    之后 `main.py calib` 就再也检测不到角点 —— 实测把标记画进保存的图里，
-    16/16 张全部失效、有效图 0 张、标定直接失败。
-    所以标记只画在预览用的 `view`（frame 的副本）上，见下面的预览循环。
+    存下去的必须是没有标记的原始帧：角点标记会盖住黑白边界，之后 main.py calib
+    就再也检不到角点。实测把标记画进保存的图里，16/16 张全失效、有效图 0 张、
+    标定直接失败。所以标记只画在预览用的 view（frame 的副本）上。
     """
     ok = corners is not None
     if ok:
@@ -96,7 +93,7 @@ def main() -> int:
     ap.add_argument("--square-mm", type=float, default=config.BOARD_SQUARE_MM)
     ap.add_argument("--outdir", default=str(config.CALIB_IMAGES))
     ap.add_argument("--no-show", dest="show", action="store_false",
-                    help="不开窗口（配合 --auto 做无界面采集；默认开窗口，SPACE 存图要开窗口）")
+                    help="不开窗口（配合 --auto 无人值守采集；按 SPACE 存图要开窗口）")
     a = ap.parse_args()
 
     outdir = Path(a.outdir)
@@ -154,8 +151,8 @@ def main() -> int:
                 do_save = key == ord(" ")
 
             if do_save:
-                # 存原始帧（不存画了提示的 view）：标记会污染标定图，见 save_frame 的说明。
-                # 直接复用预览循环里已经算出的角点，不再重复检测一次
+                # 存原始帧（不存画了提示的 view），标记会污染标定图，见 save_frame。
+                # 复用预览循环算好的角点，不再检测一次。
                 if save_frame(frame.copy(), corners if ok_cb else None,
                               outdir, coverage, index):
                     good += 1

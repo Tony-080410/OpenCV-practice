@@ -1,9 +1,9 @@
-"""目标选择与可用性判定：只负责“哪个是我要的目标、这次结果能不能用”。
+"""目标选择和可用性判定：哪个是我要的目标，这一帧结果能不能用。
 
-按手册要求，把“保留全部检测结果”和“选定目标”分开：
-    TagDetector 给出全部 -> select_target 只挑 TARGET_ID -> evaluate 判定 valid
-未检测到目标、检测质量差、解算失败、目标跑到相机后面，都返回 valid=False，
-绝不沿用上一帧的旧位姿。
+按手册要求把"保留全部检测"和"选定目标"分开：
+    TagDetector 给全部 -> select_target 只挑 TARGET_ID -> evaluate 判 valid
+没检测到目标、质量差、解算失败、目标跑到相机后面，都返回 valid=False，
+不沿用上一帧的旧位姿。
 """
 from __future__ import annotations
 
@@ -35,8 +35,8 @@ def evaluate(detections: list[TagDetection], target_id: int = None) -> TargetSta
     tid = config.TARGET_ID if target_id is None else target_id
     det = select_target(detections, tid)
     if det is None:
-        # 区分"画面里什么都没有"和"有 tag 但不是我要的 ID"——这两种情况
-        # 对使用者是完全不同的意思，之前都写成"未检测到 ID x"，容易被读成前者。
+        # 区分"画面里什么都没有"和"有 tag 但不是我要的 ID"，两种意思差很多，
+        # 以前都写成"未检测到 ID x"，容易被读成前者。
         if not detections:
             return TargetState(False, "画面里没有 tag", None)
         seen = "、".join(str(i) for i in sorted({d.tag_id for d in detections}))

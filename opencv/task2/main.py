@@ -1,18 +1,7 @@
-"""任务二 入口：相机标定（calib）与 AprilTag 位姿演示（demo）。
+"""任务二入口：相机标定（calib）与 AprilTag 位姿演示（demo）。
 
-所有命令都在 task2 目录下执行：
-
-    python main.py demo                 # 实时演示：检测 + 位姿 + 显示（需先标定）
-    python main.py demo --no-calib      # 没标定时先看检测效果（位姿数值不可信，仅用于通路自测）
-    python main.py demo --seconds 30 --record    # 录 30 秒并保存演示视频与日志
-    python main.py calib                # 用 data/calib_images 里的图做标定，保存参数
-    python main.py check                # 查看标定参数摘要，并检查与当前相机分辨率是否成对
-    python main.py --help
-
-处理流程（demo）：
-    取帧 -> 去畸变 -> 检测全部 Tag -> 选定目标并判 valid -> 解算 R、t -> 画框/中心/角点/坐标轴/HUD
-职责划分：取流在 src/camera.py，检测在 tag_detect.py，目标选择在 target.py，
-解算在 pose.py，标定在 calibration.py，画图在 visualize.py，串联在 pipeline.py。
+demo 流程：取帧 -> 去畸变 -> 检测 Tag -> 选目标判 valid -> 解算 R、t -> 画框和 HUD。
+子命令 demo / calib / check，参数见 python main.py --help。
 """
 from __future__ import annotations
 
@@ -36,9 +25,9 @@ from src.undistort import Undistorter
 
 EXIT_OK, EXIT_ERROR = 0, 1
 
-# 保活表：实测 OpenCV 5.0.x + apriltag 在解释器退出、以及释放 main() 局部变量时会随机段错误
-# （exit 139，重定向输出时还可能整段丢失）。把这些重对象挂在模块级引用上活到 os._exit，
-# 并在返回前先 flush，避开那段会崩的清理。详见 README 已知问题第 1 条。
+# OpenCV 5.0.x + apriltag 在解释器退出、或释放 main() 局部变量时会随机段错误（exit 139，
+# 重定向输出时还可能整段丢）。把重对象挂模块级引用上活到 os._exit，返回前先 flush，
+# 绕开那段会崩的清理。见 README 已知问题第 1 条。
 _KEEP_ALIVE: list = []
 
 
@@ -64,7 +53,7 @@ def cmd_demo(a: argparse.Namespace) -> int:
         return EXIT_ERROR
 
     if sp is None:
-        f = float(a.width)                                   # 粗略经验值，绝不是标定结果
+        f = float(a.width)                                   # 粗略估值，不是标定结果
         K = np.array([[f, 0, a.width / 2], [0, f, a.height / 2], [0, 0, 1]], dtype=np.float64)
         D = np.zeros(5)
         undist, calib_note = None, "未使用标定参数（内参为估值，位姿数值不可信）"
@@ -95,8 +84,8 @@ def cmd_demo(a: argparse.Namespace) -> int:
     writer = None
     writer_fps = float(a.record_fps) if a.record_fps > 0 else 30.0
     rec_t0 = 0.0
-    # 录像/日志的落盘路径：默认是 config 里写死的交付物路径，可用 --record-out / --log-out 改。
-    # 试录时把它们指到 /tmp，就不会覆盖 outputs/ 里已有的交付物（给任一个就等于开录像）。
+    # 录像/日志默认写到 config 里的交付物路径，可用 --record-out / --log-out 改。
+    # 试录时指到 /tmp 就不会覆盖 outputs/，给任一个就等于开录像。
     want_record = bool(a.record or a.record_out or a.log_out)
     video_path = Path(a.record_out) if a.record_out else config.DEMO_VIDEO
     log_path = Path(a.log_out) if a.log_out else config.DEMO_LOG
@@ -143,8 +132,8 @@ def cmd_demo(a: argparse.Namespace) -> int:
             print(line)
             log_lines.append(line)
 
-            # 目标刚变成有效时，把完整的 R、t、rvec 打一份出来（"输出有效 R、t"的证据，
-            # 也便于人工核对变换方向；逐帧只打转移点，避免刷屏）
+            # 目标刚变有效时把完整 R、t、rvec 打一份出来，当作"输出有效 R、t"的证据，
+            # 也方便人工核对变换方向；只在有效/无效切换时打，免得刷屏
             if result.valid and not prev_valid:
                 p = result.pose
                 block = [f"[位姿] seq={seq}  t_ms={t_ms}",
@@ -178,9 +167,8 @@ def cmd_demo(a: argparse.Namespace) -> int:
             visualize.draw_hud(shown, hud)
 
             if writer is not None:
-                # 时间轴对齐：让"已写入帧数 / 写入帧率"追上真实耗时。
-                # 处理比写入慢就重复写同一帧，处理比写入快就这一帧不写（=丢帧）。
-                # 视频时长 == 真实耗时，回放既不快放也不慢放。
+                # 时间轴对齐：让"已写帧数 / 写入帧率"追上真实耗时。
+                # 处理慢于写入就重复写同一帧，快就这一帧不写（丢帧），视频时长等于真实耗时。
                 target = int((time.monotonic() - rec_t0) * writer_fps) + 1
                 while n_written < target:
                     writer.write(shown)
@@ -229,9 +217,9 @@ def cmd_demo(a: argparse.Namespace) -> int:
 
 
 def _pose_json(seq: int, t_ms: int, result) -> dict:
-    """把一帧结果整理成 JSON 行：含完整 R 矩阵、t、距离与耗时。
+    """一帧结果整理成 JSON 行，含完整 R、t、距离与耗时。
 
-    这份文件既可作为任务二“输出有效 R、t”的证据，也可被任务三直接消费
+    可当任务二"输出有效 R、t"的证据，也能被任务三直接消费
     （seq/t_ms/valid/id/毫米坐标/rx,ry,rz 就是 CV1 协议要的字段）。
     """
     out = dict(result.record(seq, t_ms))
@@ -334,21 +322,20 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("--max-frames", type=int, default=0, help="只处理前 N 帧，0 表示不限")
     d.add_argument("--record", action="store_true", help="保存演示视频与日志")
     d.add_argument("--record-out", default=None,
-                   help=f"演示视频输出路径（默认 {config.DEMO_VIDEO}）。试录时指到 /tmp 就不会覆盖交付物；"
-                        f"给了它就等于开录像")
+                   help=f"录像输出路径（默认 {config.DEMO_VIDEO}）；给了它就等于开录像，试录可指 /tmp")
     d.add_argument("--log-out", default=None,
                    help=f"演示日志输出路径（默认 {config.DEMO_LOG}）")
     d.add_argument("--record-fps", type=float, default=0.0,
-                   help="录像写入帧率（默认 30）；录像按真实时间轴重复/补帧，回放≈实时")
+                   help="录像写入帧率（默认 30），按真实时间轴补帧，回放≈实时")
     d.add_argument("--no-calib", action="store_true", help="不加载标定参数（只看检测通路）")
     d.add_argument("--tag-mm", type=float, default=config.TAG_EDGE_MM,
                    help="Tag 黑框外边实测边长（mm），临时覆盖 config")
     d.add_argument("--target-id", type=int, default=config.TARGET_ID,
                    help="要选中并发布位姿的 Tag ID（临时覆盖 config）")
     d.add_argument("--dump", default=None,
-                   help="逐帧完整位姿写 JSONL（含 R 矩阵），例如 outputs/logs/pose.jsonl")
+                   help="逐帧位姿写 JSONL（含 R 矩阵），如 outputs/logs/pose.jsonl")
     d.add_argument("--no-show", dest="show", action="store_false",
-                   help="不开窗口，只打日志/录像（默认开窗口；要按 s 截图必须开窗口）")
+                   help="不开窗口只打日志/录像（按 s 截图需要窗口）")
     d.set_defaults(func=cmd_demo)
 
     c = sub.add_parser("calib", help="用 data/calib_images 里的图做标定", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -375,15 +362,15 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help()
         return EXIT_OK
     code = a.func(a)
-    sys.stdout.flush()          # 先落盘：之后的清理阶段可能出问题（见文件顶部 _KEEP_ALIVE 说明）
+    sys.stdout.flush()          # 先落盘，后面的清理阶段可能出问题（见顶部 _KEEP_ALIVE）
     sys.stderr.flush()
     return code
 
 
 if __name__ == "__main__":
     _code = main()
-    # OpenCV 5.0.x 与 apriltag 库在解释器退出阶段会段错误（实测 exit 139），与本程序逻辑无关。
-    # 用 os._exit 带退出码直接退出，跳过会崩的清理阶段，保证退出码可信。
+    # 解释器退出阶段 OpenCV 5.0.x + apriltag 会段错误（实测 exit 139），跟本程序逻辑无关。
+    # 用 os._exit 带退出码直接退出，跳过会崩的清理，退出码才可信。
     sys.stdout.flush()
     sys.stderr.flush()
     os._exit(_code)

@@ -1,15 +1,14 @@
-"""位姿解算：只负责“R、t 是多少”，输入是角点 + 内参 + 实测边长。
+"""位姿解算：由角点 + 内参 + 实测边长算 R、t。
 
-输出约定（README 第 5 节）：
+约定（README 第 5 节）：
     p_camera = R · p_tag + t
-    t（米）三个分量 = Tag 中心在相机光学系中的位置
-    rvec（弧度）= 与 R 等价的 Rodrigues 旋转向量，正是任务三要发的那三个数
-    distance = |t|（直线距离），z = t[2]（沿光轴的深度），两者不是一回事
+    t（米）就是 Tag 中心在相机系里的位置
+    rvec（弧度）是与 R 等价的 Rodrigues 向量，正是任务三要发的那三个数
+    distance = |t| 是直线距离，z = t[2] 是沿光轴的深度，两个不一样
 
-为什么不用 SOLVEPNP_IPPE_SQUARE：它按 OpenCV 文档要求物体点 y 向上、特定次序，
-本项目的 tag 系是 y 向下（与相机光学系同向），直接喂进去会得到镜像解
-（实测旋转误差 180°、平移取反，重投影残差却极小，很难发现）。
-改用 SOLVEPNP_SQPNP，不挑剔点序。
+不用 SOLVEPNP_IPPE_SQUARE：它按 OpenCV 文档要物体点 y 向上、特定次序，
+本项目的 tag 系 y 向下，直接喂进去会得到镜像解（实测旋转差 180°、平移取反，
+重投影残差却极小，很难发现）。改用 SOLVEPNP_SQPNP，不挑点序。
 """
 from __future__ import annotations
 
@@ -51,9 +50,9 @@ class PoseResult:
 
     def axes_points(self, edge_m: float, K: np.ndarray, dist: np.ndarray = None,
                     length_ratio: float = None) -> tuple[np.ndarray, np.ndarray]:
-        """画三维坐标轴用：Tag 系下的四个点（原点 + 三个轴端点）及其投影。
+        """画三维坐标轴用：Tag 系下四个点（原点 + 三个轴端点）及其投影。
 
-        必须用**解算本帧时用的那套内参**投影，否则轴会跑到别处；
+        要用解算本帧时用的那套内参投影，否则轴会跑到别处；
         dist 也传解算时用的（去畸变画面传全零）。
         """
         r = config.AXIS_LENGTH_RATIO if length_ratio is None else length_ratio
@@ -78,7 +77,7 @@ def tag_object_points(edge_m: float) -> np.ndarray:
 
 
 def check_pose_sane(tvec: np.ndarray) -> tuple[bool, str]:
-    """位姿合理性检查：目标必须在相机前方，且数值有限（放在 pose 模块，属几何问题）。"""
+    """位姿合理性检查：目标得在相机前方，数值要有限。"""
     t = np.asarray(tvec, dtype=np.float64).ravel()
     if not np.all(np.isfinite(t)):
         return False, "位姿数值无效"

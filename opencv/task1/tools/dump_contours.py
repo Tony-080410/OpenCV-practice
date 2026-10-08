@@ -1,8 +1,4 @@
-"""轮廓、多边形近似、最小外接旋转矩形，以及几何筛选的接受/拒绝理由。
-
-用法:
-    python tools/dump_contours.py --index 120
-"""
+"""导出轮廓 / 多边形近似 / 旋转矩形，以及几何筛选的保留与剔除结果。"""
 
 import argparse
 import sys

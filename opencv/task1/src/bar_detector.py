@@ -1,7 +1,4 @@
-"""轮廓提取与几何筛选：掩膜 → 灯条列表。
-
-只做"从二值掩膜到灯条几何"的工作：不读视频、不画图。
-"""
+"""轮廓提取和几何筛选：掩膜进，灯条列表出。"""
 
 import math
 from dataclasses import dataclass
@@ -106,7 +103,7 @@ def reject_reason(candidate, image_area):
 
 
 def filter_candidates(candidates, image_shape):
-    """先保留全部候选，再统一筛选：返回 (通过的候选, [(被剔除候选, 原因)])。"""
+    """筛一遍全部候选，返回 (通过的, [(被剔除的, 原因)])。"""
     image_area = float(image_shape[0] * image_shape[1])
     kept, rejected = [], []
     for candidate in candidates:
@@ -120,12 +117,12 @@ def filter_candidates(candidates, image_shape):
 
 
 def detect(mask):
-    """完整检测：掩膜 → (灯条列表, 被剔除列表)。"""
+    """掩膜进，(灯条列表, 被剔除列表) 出。"""
     return filter_candidates(find_candidates(mask), mask.shape)
 
 
 def metrics(candidate):
-    """给控制台日志和报告用的可读指标。"""
+    """打日志、写报告用的可读指标。"""
     return {
         "center": (round(float(candidate.center[0]), 1),
                    round(float(candidate.center[1]), 1)),
@@ -148,5 +145,5 @@ REASON_TEXT = {
 
 
 def format_reason(reason):
-    """把内部原因码转成中文说明，便于在控制台和报告里引用。"""
+    """原因码转成中文。"""
     return REASON_TEXT.get(reason, reason)

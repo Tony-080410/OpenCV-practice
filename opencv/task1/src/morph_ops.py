@@ -1,4 +1,4 @@
-"""形态学优化：掩膜进，掩膜出。参数全部来自 config, 便于成组对比。"""
+"""形态学：掩膜进，掩膜出。参数从 config 取，方便成组对比。"""
 
 import cv2
 
@@ -18,9 +18,9 @@ def make_kernel(ksize):
 
 
 def cleanup(mask, open_ksize=config.MORPH_OPEN_KSIZE, close_ksize=config.MORPH_CLOSE_KSIZE):
-    """先开运算去掉小白噪点，再闭运算补灯条内部的空洞。
+    """开运算去小白噪点，闭运算补灯条内部空洞。
 
-    闭运算核不能过大：它会在两根相邻灯条之间架桥，把一对灯条连成一个大块。
+    闭运算核大了会在相邻两根灯条之间架桥，连成一大块。
     """
     result = mask
     kernel = make_kernel(open_ksize)

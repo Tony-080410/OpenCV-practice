@@ -1,8 +1,8 @@
-"""探测摄像头的真实能力：支持的像素格式/分辨率、以及可用的 V4L2 控制项。
+"""探测摄像头的真实能力：支持的像素格式/分辨率、可用的 V4L2 控制项。
 
-为什么要单独探一次：`cv2.VideoCapture.isOpened()` 为真不代表拿到了你要的分辨率，
-而“内参必须与分辨率成对”，所以标定前必须确认相机到底能给什么。
-本机不装 v4l-utils 也能跑（直接 ioctl）。
+单独探一次的原因：cv2.VideoCapture.isOpened() 为真不代表拿到了想要的分辨率，
+而内参必须跟分辨率成对，标定前得先确认相机到底能给什么。不用装 v4l-utils，
+直接 ioctl。
 
 用法：python tools/probe_camera.py            # 默认探 /dev/video0 /dev/video1 等
       python tools/probe_camera.py /dev/video0

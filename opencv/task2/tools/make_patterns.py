@@ -1,23 +1,19 @@
-"""生成打印级标定素材（尺寸精确，打印后可直接量）
+"""生成打印级标定素材，尺寸精确，打印完可以直接拿尺量。
 
 产物（默认参数）：
-  assets/patterns/tag36h11_00000_official.png           官方图案原件（10x10 单元，含 1 单元白边）
-  assets/patterns/apriltag_36h11_id0_100mm.pdf[/.png]   tag 页，黑框外边精确 100.0 mm
-  assets/patterns/chessboard_9x6_20mm.pdf[/.png]        棋盘格页，9x6 内角点，方格 20.0 mm
-  assets/patterns/apriltag_36h11_id0_phone_screen.png   手机全屏显示用（不打印也能先试检测）
+  assets/patterns/tag36h11_00000_official.png          官方图案原件（10x10 单元，含 1 单元白边）
+  assets/patterns/apriltag_36h11_id0_100mm.pdf[/.png]  tag 页，黑框外边精确 100.0 mm
+  assets/patterns/chessboard_9x6_20mm.pdf[/.png]       棋盘页，9x6 内角点，方格 20.0 mm
+  assets/patterns/apriltag_36h11_id0_phone_screen.png  手机全屏显示用，不打印也能先试检测
 
-常用参数：
-  --tag-mm 100        改 tag 黑框外边（手册建议 80~120 mm）
-  --square-mm 25 --page a3    大方格需换 A3；25 mm 方格在 A4 上放不下页眉+校验尺
-  --screen            只生成手机屏幕测试图
+常用参数：--tag-mm 100 改 tag 黑框外边（手册建议 80~120 mm）；--square-mm 25 --page a3
+换 A3 才放得下 25 mm 方格（A4 放不下页眉加校验尺）；--screen 只出手机屏幕测试图。
 
-要点：
-  * 图案取自 AprilTag 官方仓库 AprilRobotics/apriltag-imgs（手册要求“使用官方图案”），
-    不是自己画的，也不是别的库重排过的（官方图案与 OpenCV aruco 生成的差了 180°）。
-  * 位姿解算用的边长是“黑框外边”，官方图案为 8x8 单元，故 8 x 单元边长。
-  * 每个 PDF 内都印了一把 100 mm 校验尺：打印后量一下，误差超过约 1% 说明被缩放，
-    必须选“实际大小 / 100%”，不要用“适合页面”。
-  * 页面四周留白远大于 1 个单元的静默区，方向标记也放在静默区之外，不影响检测。
+图案取自官方仓库 AprilRobotics/apriltag-imgs（手册要求用官方图案），不是自己画的，也不是
+别的库重排的（官方图案跟 OpenCV aruco 生成的差 180°）。位姿解算用的边长是黑框外边，官方
+图案 8x8 单元，所以等于 8x 单元边长。每个 PDF 都印了 100 mm 校验尺，打印后量一下，误差超
+约 1% 就是被缩放了，得选"实际大小 / 100%"而不是"适合页面"。页面四周留白远大于 1 个单元的
+静默区，方向标记也在静默区外，不影响检测。
 
 运行：python tools/make_patterns.py
 """
@@ -42,8 +38,8 @@ CJK_FONTS = ["/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
              "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]
 QUIET_MM = 25.0                              # 图案与任何印刷标记的最小距离
 
-# 保活表：实测 OpenCV 5.0.x + apriltag 在释放 main() 局部变量/解释器退出时会随机段错误
-# （exit 139，且重定向输出时可能整段丢失）。把重对象挂在这里活到 os._exit 避开该清理。
+# OpenCV 5.0.x + apriltag 在释放 main() 局部变量或解释器退出时会随机段错误（exit 139，
+# 重定向输出时还可能整段丢）。把重对象挂在这里活到 os._exit 避开那段清理。
 _KEEP_ALIVE: list = []
 
 
@@ -92,10 +88,10 @@ def fetch_official(dest: pathlib.Path, tag_id: int = 0) -> np.ndarray:
 
 def make_tag_page(tag: np.ndarray, edge_mm: float, out: pathlib.Path,
                   page_key: str = "a4", tag_id: int = 0):
-    """tag 页：黑框外边 = edge_mm；官方图案自带 1 单元白边，四周再留静默区。
+    """tag 页：黑框外边 = edge_mm，官方图案自带 1 单元白边，四周再留静默区。
 
-    tag_id 只用于**页面上印的说明文字**（"ID N"），图案本身由调用方传进来。
-    标题里的 ID 必须跟着实际 ID 走：写死 ID 0 会让 ID 1/2/3 的打印页标签全错。
+    tag_id 只用在页面上印的说明文字（"ID N"），图案由调用方传进来。
+    标题里的 ID 要跟着实际 ID 走，写死 ID 0 会让 ID 1/2/3 的打印页标签全错。
     """
     cells = tag.shape[0]                        # 10
     cell_mm = edge_mm / 8.0                     # 黑框外边跨 8 个单元
@@ -120,7 +116,7 @@ def make_tag_page(tag: np.ndarray, edge_mm: float, out: pathlib.Path,
         ("打印选「实际大小 / 100%」，不要缩放；打印后用页脚校验尺复核", 3.2),
     ])
 
-    # 方向标记：放在静默区之外，只指示“这一边朝上”
+    # 方向标记：放在静默区之外，只指示"这一边朝上"
     mid = (fx0 + fx1) // 2
     ty = fy0 - int(18 * PPMM)
     d.line([(mid, ty - int(5 * PPMM)), (mid, ty)], fill=0, width=int(0.5 * PPMM))
@@ -134,8 +130,8 @@ def make_tag_page(tag: np.ndarray, edge_mm: float, out: pathlib.Path,
     ])
 
     page.save(out, "PDF", resolution=PPMM * 25.4)
-    # PNG 必须用 dpi=（不是 resolution=）：PIL 的 PNG 插件不认 resolution，
-    # 静默丢弃 → 存出来的图没有 pHYs，打印程序只能瞎猜 DPI，物理尺寸全错。
+    # PNG 要用 dpi=，不是 resolution=：PIL 的 PNG 插件不认 resolution，会静默丢弃，
+    # 存出来的图没有 pHYs，打印程序只能瞎猜 DPI，物理尺寸全错。
     page.save(out.with_suffix(".png"), "PNG", dpi=(PPMM * 25.4, PPMM * 25.4))
     return dict(page=page, frame_mm=((fx1 - fx0) / PPMM, (fy1 - fy0) / PPMM),
                 cell_px=cell_px, tag_mm=cell_mm * cells, edge_mm=edge_mm)
@@ -177,8 +173,8 @@ def make_chessboard_page(cols, rows, square_mm, out, page_key="a4"):
     ])
     draw_ruler(d, 15, page_h / PPMM - 22, 100.0, "校验尺 100.0 mm：量出偏差 > 1 mm 就重新打印")
     page.save(out, "PDF", resolution=PPMM * 25.4)
-    # PNG 必须用 dpi=（不是 resolution=）：PIL 的 PNG 插件不认 resolution，
-    # 静默丢弃 → 存出来的图没有 pHYs，打印程序只能瞎猜 DPI，物理尺寸全错。
+    # PNG 要用 dpi=，不是 resolution=：PIL 的 PNG 插件不认 resolution，会静默丢弃，
+    # 存出来的图没有 pHYs，打印程序只能瞎猜 DPI，物理尺寸全错。
     page.save(out.with_suffix(".png"), "PNG", dpi=(PPMM * 25.4, PPMM * 25.4))
     return dict(page=page, orient=orient, board_mm=(bw / PPMM, bh / PPMM),
                 square_mm=square_mm, inner=(cols, rows))
@@ -186,11 +182,11 @@ def make_chessboard_page(cols, rows, square_mm, out, page_key="a4"):
 
 def make_screen_image(tag: np.ndarray, out: pathlib.Path, tag_id: int = 0,
                       canvas: int = 1200, fill: float = 0.86) -> dict:
-    """手机/平板全屏显示用：白底、tag 居中放大，屏幕上的实际尺寸由设备决定，必须实测。
+    """手机/平板全屏显示用：白底、tag 居中放大，屏幕上的实际尺寸由设备定，得实测。
 
-    用途：还没打印 Tag 时，把这张图传到手机上全屏显示，举到摄像头前就能先试通
-    「检测 + 位姿 + 显示」这条路；量出屏幕上黑框外边的实际毫米数后，用
-    `main.py demo --tag-mm <实测值>` 跑，位姿数值才有意义。
+    还没打印 Tag 时，把这张图传到手机上全屏显示，举到摄像头前就能先试通
+    检测+位姿+显示这条路；量出屏幕上黑框外边的毫米数后，用
+    main.py demo --tag-mm <实测值> 跑，位姿数值才靠谱。
     """
     cells = tag.shape[0]
     cell_px = int(canvas * fill / cells)        # 每单元像素（整数，避免边缘不齐）
@@ -215,14 +211,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag-mm", type=float, default=100.0, help="tag 黑框外边边长（mm，手册建议 80~120）")
     ap.add_argument("--square-mm", type=float, default=20.0,
-                    help="棋盘格方格边长（mm）；A4 上 20 比较稳，25 需要 --page a3")
+                    help="方格边长 mm；A4 上 20 稳，25 要 --page a3")
     ap.add_argument("--page", choices=["a4", "a3"], default="a4", help="打印纸张（默认 a4）")
     ap.add_argument("--inner-cols", type=int, default=9)
     ap.add_argument("--inner-rows", type=int, default=6)
     ap.add_argument("--tag-id", type=int, default=0, help="官方 tag36h11 的 ID（默认 0，可多打几个练手）")
     ap.add_argument("--outdir", default="assets/patterns")
     ap.add_argument("--screen", action="store_true",
-                    help="只生成手机屏幕测试图（不打印也能先试检测）")
+                    help="只生成手机屏测试图，不打印也能试检测")
     a = ap.parse_args()
     if a.tag_mm <= 0 or a.square_mm <= 0:
         print("[错误] --tag-mm 与 --square-mm 必须为正数")
@@ -259,7 +255,7 @@ def main():
           f"方格 {c['square_mm']:.1f} mm，整体 {c['board_mm'][0]:.1f} x {c['board_mm'][1]:.1f} mm，"
           f"页面 {a.page.upper()}{c['orient']}")
 
-    # 自检顺序：先 OpenCV，再 apriltag 检测——OpenCV 5.0 与该库的调用顺序会引发退出时段错误
+    # 自检顺序：先 OpenCV 再 apriltag。这两个库的调用顺序会引发退出时段错误
     chess = cv2.cvtColor(np.array(c["page"]), cv2.COLOR_GRAY2BGR)
     gray = cv2.cvtColor(chess, cv2.COLOR_BGR2GRAY)
     ok, corners = cv2.findChessboardCorners(gray, (a.inner_cols, a.inner_rows), None)

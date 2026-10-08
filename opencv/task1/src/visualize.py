@@ -1,8 +1,4 @@
-"""可视化：只负责画图。
-
-本模块不读写视频、不做任何检测判断；输入是帧和检测结果，输出是可直接保存或显示的图像。
-生成视频左上角会有标识，显示耗时、灯条数量
-"""
+"""可视化：只画图。左上角 HUD 显示帧号、灯条数、单帧耗时。"""
 
 import cv2
 import numpy as np
@@ -11,7 +7,7 @@ import config
 
 
 def draw_bars(frame, bars, color=config.BAR_COLOR, thickness=2, draw_center=True):
-    """用最小外接旋转矩形的四条边逐根框选灯条。返回新图像，不修改输入。"""
+    """逐根用最小外接旋转矩形的四条边框灯条，返回新图，不改输入。"""
     canvas = frame.copy()
     for bar in bars:
         points = np.asarray(bar.corners, dtype=np.int32).reshape(-1, 1, 2)
@@ -24,7 +20,7 @@ def draw_bars(frame, bars, color=config.BAR_COLOR, thickness=2, draw_center=True
 
 
 def draw_hud(frame, frame_index, bar_count, elapsed_ms, extra_lines=()):
-    """在左上角显示帧号、灯条数量和本帧处理耗时，以及可选的附加信息。"""
+    """左上角显示帧号、灯条数、本帧耗时，extra_lines 可再加行。"""
     lines = [
         f"frame: {frame_index}",
         f"bars: {bar_count}",
@@ -62,7 +58,7 @@ def mask_to_bgr(mask):
 
 
 def make_strip(images, labels=None, panel_width=480):
-    """把若干张图缩放后横向拼成一条带标签的对比图，用于保存代表帧截图。"""
+    """把若干张图缩到同宽，横向拼成一条带标签的对比图。"""
     if labels is None:
         labels = [""] * len(images)
     panels = []

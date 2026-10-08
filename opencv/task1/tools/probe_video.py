@@ -1,7 +1,4 @@
-"""看一个视频的真实参数：容器帧率、真实帧数、真实时长、真实帧率。
-
-用法: python tools/probe_video.py [--video data/test_video2.webm]
-"""
+"""打印视频的容器帧率、真实帧数、真实时长、真实帧率。"""
 
 import argparse
 import sys
