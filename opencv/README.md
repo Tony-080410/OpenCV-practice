@@ -91,5 +91,5 @@ python3 -m venv ../../.venv
 | 任务 | 清单在 |
 | --- | --- |
 | 一 | `task1/README.md` §12 |
-| 二 | `task2/README.md` §13、§14（对照 35 分评分表逐项自查） |
+| 二 | `task2/README.md` §13、§14 |
 | 三 | `task3/README.md` §12 |
