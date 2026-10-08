@@ -9,23 +9,21 @@
 | 项目 | 版本 / 说明 |
 | --- | --- |
 | 操作系统 | Ubuntu 26.04 LTS |
-| 语言 | Python 3.12 |
-| OpenCV | opencv-python 5.x |
-| 数值库 | numpy |
+| 语言 | Python 3.14.4 |
+| OpenCV | opencv-python 5.0.0.93（`cv2.__version__` 打印 `5.0.0`） |
+| 数值库 | numpy 2.5.3 |
 | 开发工具 | VS Code （+Python、Pylance、Python Debugger 扩展） |
-| 虚拟环境 | `~/opencv/.venv` |
+| 虚拟环境 | `~/Projects/PythonProjects/.venv`（在仓库外，从 task1 数过去两级：`../../.venv`） |
 
 安装与自检：
 
 ```bash
-# 1) 建立虚拟环境
-python3 -m venv .venv
-source .venv/bin/activate
-
-# 2) 安装依赖
+cd task1
+source ../../.venv/bin/activate       # 或 ../../.venv/bin/python main.py ... 直接跑
+# 注意路径：仓库根在 PythonProjects，venv 与根同级，所以从 task1 出发是 ../../.venv
 pip install -r requirements.txt
 
-# 3) 最小验证：能打印版本即说明 OpenCV 可用
+# 最小验证：能打印版本即说明 OpenCV 可用
 python -c "import cv2, numpy; print('OpenCV', cv2.__version__, '| numpy', numpy.__version__)"
 ```
 
@@ -62,7 +60,7 @@ task1/
 ```bash
 python main.py                                  # 处理完整视频并输出标记视频
 python main.py --max-frames 300                 # 只处理前 300 帧，快速验证
-python main.py --show                           # 实时预览（需 WSLg，按 q 或 Esc 退出）
+python main.py --show                           # 实时预览（需要一个桌面环境，按 q 或 Esc 退出）
 python main.py | tee outputs/log_task1.txt      # 同时把逐帧日志存成文件
 ```
 
@@ -95,7 +93,7 @@ python tools/probe_video.py                     # 查看真实帧数 / 时长 / 
   → 几何筛选        面积比例 / 长宽比 / 填充率 / 倾角 四项判据
   → 最小外接旋转矩形 cv2.minAreaRect → cv2.boxPoints，逐根框选
   → 标注            帧号、灯条数量、本帧处理耗时
-  → 写入输出视频    分辨率与源一致，帧率见第 6 节
+  → 写入输出视频    分辨率 1540×986（mp4v 会把奇数边长各减 1，源视频是 1540×987），帧率见第 6 节
 ```
 
 ### 4.1 颜色分割方法
@@ -153,7 +151,7 @@ mask = dominance >= DIFF_THRESH
 2. 顺序解码，得到真实帧数 `634`；
 3. 真实帧率 = `634 / 45.468 = 13.944 fps`。
 
-输出视频就按 13.944 fps 写入（`src/video_io.py` 的 `source_fps()`），成片时长和原视频一致，不会倍速。实测输出文件：`634 帧 / 45.47 s / 13.944 fps / 1540×986`，与源视频逐帧对应。
+输出视频就按 13.944 fps 写入（`src/video_io.py` 的 `source_fps()`），成片时长和原视频一致，不会倍速。实测输出文件：`634 帧 / 45.47 s / 13.944 fps / 1540×986`（高度比源少 1 像素，原因见第 4 节），与源视频逐帧对应。
 
 控制台日志：运行时逐帧打印一行，方便核对逐帧处理，下面是示例输出：
 
@@ -232,7 +230,6 @@ frame    1 | bars 4 | cost   11.8 ms
 | --- | --- |
 | 标记视频 | `outputs/videos/task1_result.mp4` |
 | 代表帧截图 | `outputs/screenshots/channels/`、`outputs/screenshots/morphology/`、`outputs/screenshots/contours/` |
-| 逐帧处理日志 | 运行 `python main.py | tee outputs/log_task1.txt` 得到 |
 | 参数对比说明 | 本文第 4.1、4.2、5、8 节 |
 | 输入素材 | 考核提供的 `test_video2.webm` |
 
