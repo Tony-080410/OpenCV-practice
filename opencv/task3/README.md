@@ -21,7 +21,7 @@ $CV1,42,12345,1,0,100.0,-50.0,800.0,0.000000,0.000000,0.000000*33
 | 虚拟环境 | `~/Projects/PythonProjects/.venv` |
 | 串口库 | pyserial 3.5（本任务唯一新增依赖） |
 | 虚拟串口对 | `socat`（`sudo apt install socat`），Linux 伪终端对 |
-| 接收端 | SerialPortAssistant（KangLin）或 COMTool；本仓库另附等价的命令行接收端 |
+| 接收端 | COMTool|
 | 实时源依赖 | 复用任务二：OpenCV 5.0.0.93、numpy 2.5.3、pupil-apriltags 1.0.4.post11 |
 
 安装与自检：
@@ -30,7 +30,7 @@ $CV1,42,12345,1,0,100.0,-50.0,800.0,0.000000,0.000000,0.000000*33
 cd task3
 source ../../.venv/bin/activate       # 或 ../../.venv/bin/python cvlink/main.py ... 直接跑
 # 注意路径：仓库根在 PythonProjects，venv 与根同级，所以从 task3 出发是 ../../.venv
-unset LD_LIBRARY_PATH                 # 本机 Hermes 运行时必需：否则 venv 里 pip/ssl 不可用
+unset LD_LIBRARY_PATH
 pip install -r requirements.txt
 
 # 不碰串口、不碰相机的最小自检：协议是否与手册示例逐字节一致
